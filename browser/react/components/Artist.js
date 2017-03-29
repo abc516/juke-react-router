@@ -22,7 +22,9 @@ class Artist extends React.Component  {
         <h3>{this.props.artist.name}</h3>
         <h4>ALBUMS</h4>
         {
-          this.props.artist.albums && <Albums selectAlbum={this.props.selectAlbum} albums={this.props.artist.albums} />
+          this.props.artist.albums &&
+          <Albums selectAlbum={this.props.selectAlbum}
+           albums={this.props.artist.albums} />
         }
         <h4>SONGS</h4>
         { this.props.artist.songs && <Songs
