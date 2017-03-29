@@ -9,7 +9,7 @@ import Album from '../components/Album';
 import Sidebar from '../components/Sidebar';
 import Player from '../components/Player';
 
-import { convertAlbum, convertAlbums, skip } from '../utils';
+import { convertAlbum, convertAlbums, convertArtist, skip } from '../utils';
 
 export default class AppContainer extends Component {
 
@@ -23,12 +23,17 @@ export default class AppContainer extends Component {
     this.prev = this.prev.bind(this);
     this.selectAlbum = this.selectAlbum.bind(this);
     this.deselectAlbum = this.deselectAlbum.bind(this);
+    this.selectArtist = this.selectArtist.bind(this);
   }
 
   componentDidMount () {
     axios.get('/api/albums/')
       .then(res => res.data)
       .then(album => this.onLoad(convertAlbums(album)));
+
+      axios.get('/api/artists/')
+        .then(res => res.data)
+        .then(artists => this.onArtistsLoad(artists));
 
     AUDIO.addEventListener('ended', () =>
       this.next());
@@ -39,6 +44,12 @@ export default class AppContainer extends Component {
   onLoad (albums) {
     this.setState({
       albums: albums
+    });
+  }
+
+  onArtistsLoad (artists) {
+    this.setState({
+      artists: artists
     });
   }
 
@@ -98,6 +109,31 @@ export default class AppContainer extends Component {
       }));
   }
 
+  selectArtist (artistId) {
+    let artistPromise = axios.get(`/api/artists/${artistId}`)
+    let albumsPromise = axios.get(`/api/artists/${artistId}/albums`)
+    let songsPromise = axios.get(`/api/artists/${artistId}/songs`)
+
+    Promise.all([artistPromise, albumsPromise, songsPromise])
+    .then(([artistPromiseResponse, albumsPromiseResponse, songsPromiseResponse]) => {
+      return [artistPromiseResponse.data, albumsPromiseResponse.data, songsPromiseResponse.data]
+    })
+    .then(([artist, artistAlbums, artistSongs]) => {
+      artist.albums = convertAlbums(artistAlbums)
+      artist.songs = artistSongs
+      this.setState({
+        selectedArtist: artist
+      })
+    })
+    .catch(console.log)
+
+    // axios.get(`/api/artists/${artistId}`)
+    //   .then(res => res.data)
+    //   .then(artist => this.setState({
+    //     selectedArtist: artist
+    //   }))
+  }
+
   deselectAlbum () {
     this.setState({ selectedAlbum: {}});
   }
@@ -117,7 +153,10 @@ export default class AppContainer extends Component {
               currentSong: this.state.currentSong,
               isPlaying: this.state.isPlaying,
               toggleOne: this.toggleOne,
-              selectAlbum: this.selectAlbum
+              selectAlbum: this.selectAlbum,
+              artists: this.state.artists,
+              artist: this.state.selectedArtist,
+              selectArtist: this.selectArtist
             }) : null
         }
 
